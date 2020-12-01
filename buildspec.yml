@@ -1,0 +1,38 @@
+version: 0.2 
+ 
+phases: 
+  install: 
+    runtime-versions: 
+#      java: corretto11
+      docker: 18
+    commands: 
+      - echo ===== install phase now ... ===== 
+#      - echo ===== install jdk ===== 
+  pre_build:
+    commands:
+      - echo ===== Logging in to Amazon ECR  ===== 
+      - $(aws ecr get-login --no-include-email --region ${AWS_DEFAULT_REGION})
+  build: 
+    commands: 
+      - echo ===== build phase now... ===== 
+#      - pwd 
+#      - cd ciel2-template-super-pom 
+#      - mvn install 
+#      - cd ../ciel2-template-core/ 
+#      - mvn install
+#      - cd ../ciel2-template-web/
+#      - mvn install
+#      - cd ..
+#      - ls -l 
+      - docker info
+      - docker build -t ${IMAGE_REPO_NAME}:${IMAGE_TAG} ./
+      - docker tag ${IMAGE_REPO_NAME}:${IMAGE_TAG} ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_REPO_NAME}:${IMAGE_TAG}
+  post_build: 
+    commands: 
+      - echo ===== postbuild phase now... ===== 
+      - docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_REPO_NAME}:${IMAGE_TAG}
+      - printf '[{"name":"%s","imageUri":"%s"}]' ${CONTAINER_NAME} ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_REPO_NAME}:${IMAGE_TAG} > imagedefinitions.json
+
+artifacts:
+  files: imagedefinitions.json
+      
